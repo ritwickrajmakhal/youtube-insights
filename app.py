@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 import mindsdb_sdk
 from flask_cors import CORS
-from time import sleep
 
 # Create the Flask app
 app = Flask(__name__)
@@ -25,7 +24,7 @@ try:
     server = mindsdb_sdk.connect(login=os.environ.get(
         'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
 except:
-    raise Exception("Check your internet connection or credentials")
+    raise Exception("Check your internet connection or mindsdb credentials")
 
 # Create project if not exists
 try:
@@ -47,6 +46,7 @@ except:
 
 
 def create_model(name, predict, prompt_template):
+    from time import sleep
     # check model is exist or not
     try:
         # Create the model
@@ -55,6 +55,7 @@ def create_model(name, predict, prompt_template):
             engine='openai',
             predict=predict,
             prompt_template=prompt_template,
+            api_key=os.environ.get('OPENAI_API_KEY')
         )
         while model.get_status() != 'complete':
             sleep(1)
@@ -98,6 +99,24 @@ def get_youtube_insights():
     summarizer_result = text_summarization_model.predict(
         {'comments': merged_comments})
     response["summary"] = str(summarizer_result['summary'][0])
+
+    # Predict recommendations
+    recommendation_model = create_model(name='recommendation_model', predict='recommendation',
+                                        prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
+    # Predict recommendations
+    recommendation_result = recommendation_model.predict(
+        {'comments': merged_comments})
+    response["recommendation"] = str(
+        recommendation_result['recommendation'][0])
+
+    # Keyword Extraction
+    keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
+                                            prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
+    # Predict keywords
+    keyword_extraction_result = keyword_extraction_model.predict(
+        {'comments': merged_comments})
+    response["keywords"] = str(keyword_extraction_result['keywords'][0])
+
     return jsonify(response)
 
 

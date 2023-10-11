@@ -1,6 +1,6 @@
-# Social Insights with MindsDB and YouTube API
+# YouTube Insights with MindsDB and YouTube API
 
-Social Insights is a Flask web application that uses MindsDB and the YouTube API to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
+YouTube Insights is a Flask web application that uses MindsDB and the YouTube API to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
 
 ## Table of Contents
 
@@ -19,6 +19,7 @@ Before getting started, make sure you have the following prerequisites installed
 
 - [Python 3.x](https://www.python.org/downloads/)
 - [YouTube API Key](https://developers.google.com/youtube/registering_an_application)
+- [OpenAI API Key](https://openai.com/)
 - [MindsDB Cloud Account](https://mindsdb.com/)
 - Internet connection
 
@@ -29,13 +30,13 @@ Before getting started, make sure you have the following prerequisites installed
 1. Clone this repository to your local machine:
 
    ```bash
-   https://github.com/ritwickrajmakhal/social-insights.git
+   git clone https://github.com/ritwickrajmakhal/youtube-insights.git
    ```
 
 2. Change into the project directory:
 
    ```bash
-   cd social-insights
+   cd youtube-insights
    ```
 
 3. Create a virtual environment and activate it:
@@ -59,6 +60,7 @@ Before getting started, make sure you have the following prerequisites installed
    MINDSDB_EMAIL=your-mindsdb-email
    MINDSDB_PASSWORD=your-mindsdb-password
    YOUTUBE_API_KEY=your-youtube-api-key
+   OPENAI_API_KEY=your-openai-api-key
    ```
 
 2. Make sure you have an internet connection to connect to the MindsDB Cloud server.
@@ -91,12 +93,14 @@ Before getting started, make sure you have the following prerequisites installed
   - Example response:
     ```json
     {
+      "keywords": "Python, React, OpenSource...",
+      "recommendation": "recommendations...",
       "sentiments": {
-        "positive": 5,
+        "negative": 0,
         "neutral": 3,
-        "negative": 2
+        "positive": 0
       },
-      "summary": "A summary of comments..."
+      "summary": "Comment summary..."
     }
     ```
 
