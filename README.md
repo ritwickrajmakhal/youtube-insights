@@ -80,19 +80,20 @@ Before getting started, make sure you have the following prerequisites installed
   - Parameters:
 
     - `youtube_video_id`: The YouTube video ID for which you want to analyze comments.
+    - `limit`: The maximum number of comments to analyze. Defaults to 10.
 
   - Example request:
 
     ```
-    GET http://localhost:5000/api/youtube?youtube_video_id=your-video-id
+    GET http://localhost:5000/api/youtube?youtube_video_id=your-video-id?limit=10
     ```
 
   - Example response:
     ```json
     {
       "sentiments": {
-        "positive": 10,
-        "neutral": 5,
+        "positive": 5,
+        "neutral": 3,
         "negative": 2
       },
       "summary": "A summary of comments..."

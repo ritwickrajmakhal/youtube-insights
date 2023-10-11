@@ -29,9 +29,9 @@ except:
 
 # Create project if not exists
 try:
-    project = server.get_project('social_insights')
+    project = server.get_project('youtube_insights')
 except:
-    project = server.create_project('social_insights')
+    project = server.create_project('youtube_insights')
 
 # Add data sources if not exists
 try:
@@ -44,6 +44,7 @@ try:
         'youtube_api_token': os.environ.get('YOUTUBE_API_KEY')})
 except:
     mindsdb_youtube = server.get_database('mindsdb_youtube')
+
 
 def create_model(name, predict, prompt_template):
     # check model is exist or not
@@ -62,10 +63,12 @@ def create_model(name, predict, prompt_template):
         # Get the model
         return project.models.get(name)
 
+
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
 
     youtube_video_id = request.args.get('youtube_video_id')
+    max_comments_limit = request.args.get('limit', 10)
     # Create the JSON response with initial sentiment counts
     response = {}
 
@@ -76,8 +79,8 @@ def get_youtube_insights():
     # Predict sentiments
     sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
                                     FROM mindsdb_youtube.get_comments AS input
-                                    JOIN social_insights.sentiment_classifier_model AS output
-                                    WHERE input.youtube_video_id = \"{youtube_video_id}\" LIMIT 30''').fetch()
+                                    JOIN youtube_insights.sentiment_classifier_model AS output
+                                    WHERE input.youtube_video_id = \"{youtube_video_id}\" LIMIT {max_comments_limit}''').fetch()
 
     sentiment_counts = sentiment_result['sentiment'].value_counts()
     response["sentiments"] = {
@@ -88,11 +91,12 @@ def get_youtube_insights():
 
     # Summarize the comments or predict recommendations
     text_summarization_model = create_model(name='text_summarization_model', predict='summary',
-                                    prompt_template="provide an informative summary of the comments comments:{{comments}} using full sentences")
+                                            prompt_template="provide an informative summary of the comments comments:{{comments}} using full sentences")
     # gather all comment
     merged_comments = ''.join(sentiment_result['comment'].tolist())
     # Predict summarized comment
-    summarizer_result = text_summarization_model.predict({'comments': merged_comments})
+    summarizer_result = text_summarization_model.predict(
+        {'comments': merged_comments})
     response["summary"] = str(summarizer_result['summary'][0])
     return jsonify(response)
 
