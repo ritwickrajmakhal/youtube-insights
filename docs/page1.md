@@ -8,39 +8,39 @@
 
 - Then import the MindsDB SDK in `app.py`:
 
-    ```py
-    ...
-    import os
-    import mindsdb_sdk
+  ```py
+  ...
+  import os
+  import mindsdb_sdk
 
-    # Load the environment variables from the .env file
-    load_dotenv()
-    ...
-    ```
+  # Load the environment variables from the .env file
+  load_dotenv()
+  ...
+  ```
 
 ### Step 5: Create a MindsDB project
 
 - To create a mindsdb project in python we have first make a connection to the mindsdb server.
 
-    ```py
-    ...
-    load_dotenv()
-    # Check if the environment variables are set
-    if os.environ.get('MINDSDB_EMAIL') is None:
-        raise Exception('Please set the MINDSDB_EMAIL environment variable')
-    if os.environ.get('MINDSDB_PASSWORD') is None:
-        raise Exception(
-            'Please set the MINDSDB_PASSWORD environment variable')
+  ```py
+  ...
+  load_dotenv()
+  # Check if the environment variables are set
+  if os.environ.get('MINDSDB_EMAIL') is None:
+      raise Exception('Please set the MINDSDB_EMAIL environment variable')
+  if os.environ.get('MINDSDB_PASSWORD') is None:
+      raise Exception(
+          'Please set the MINDSDB_PASSWORD environment variable')
 
-    # Connect to MindsDB Cloud server
-    try:
-        server = mindsdb_sdk.connect(login=os.environ.get(
-            'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
-    except:
-        raise Exception("Check your internet connection or mindsdb credentials")
-    app = Flask(__name__)
-    ...
-    ```
+  # Connect to MindsDB Cloud server
+  try:
+      server = mindsdb_sdk.connect(login=os.environ.get(
+          'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
+  except:
+      raise Exception("Check your internet connection or mindsdb credentials")
+  app = Flask(__name__)
+  ...
+  ```
 
   In this code snippet we are checking if the environment variables are set and then we are connecting to the mindsdb server using the `connect` method. You can read more about the `connect` method [here](https://docs.mindsdb.com/sdk_python/connect).
 
@@ -89,4 +89,4 @@
 
   ![MindsDB Cloud Editor](./assets/img/mindsdb-cloud-editor.png)
 
-[<<Previous](./index.md) | [Next>>](./page2.md)
+[<<Previous](./index.md) [Next>>](./page2.md)

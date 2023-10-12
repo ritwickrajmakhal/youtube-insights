@@ -1,6 +1,6 @@
-# YouTube Insights with MindsDB and YouTube API
+# YouTube Insights with MindsDB SDK
 
-YouTube Insights is a Flask web application that uses MindsDB and the YouTube API to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
+YouTube Insights is a Flask web application that uses MindsDB SDK to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
 
 ## Table of Contents
 

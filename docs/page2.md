@@ -24,6 +24,16 @@
     ```
 
     In this code snippet we are checking if the model exists and if it doesn't exist we are creating a new model.
+    
+- **Model Creation**:
+   ```py
+   sentiment_classifier_model = create_model(
+       name='sentiment_classifier_model',
+       predict='sentiment',
+       prompt_template="describe the sentiment of the comment strictly as 'positive', 'neutral', or 'negative'.'I love the product':positive, 'It is a scam':negative '{{comment}}.':"
+   )
+   ```
+   In this code we are creating a model called `sentiment_classifier_model` using the `create_model` function we created in the previous step. The model is using the `openai` engine and the `sentiment` column is the column we want to predict. The `prompt_template` is the template that will be used to train the model.
 
 ### Step 8: YouTube comment sentiment analysis
 
@@ -52,17 +62,7 @@
    ```
    An empty dictionary called 'response' is created to store the API response data.
 
-5. **Model Creation**:
-   ```py
-   sentiment_classifier_model = create_model(
-       name='sentiment_classifier_model',
-       predict='sentiment',
-       prompt_template="describe the sentiment of the comment strictly as 'positive', 'neutral', or 'negative'.'I love the product':positive, 'It is a scam':negative '{{comment}}.':"
-   )
-   ```
-   In this code we are creating a model called `sentiment_classifier_model` using the `create_model` function we created in the previous step. The model is using the `openai` engine and the `sentiment` column is the column we want to predict. The `prompt_template` is the template that will be used to train the model.
-
-6. **Sentiment Prediction**:
+5. **Sentiment Prediction**:
    ```py
    sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
                                     FROM mindsdb_youtube.get_comments AS input
@@ -72,13 +72,13 @@
    ```
    In this code we are using the `query` method to query the model we created in the previous step. The query is selecting the `comment` and `sentiment` columns from the `get_comments` table and joining it with the `sentiment_classifier_model` model. The `youtube_video_id` is the video id of the video we want to get the comments for. The `max_comments_limit` is the maximum number of comments we want to get. The `fetch` method is used to execute the query and get the results.
 
-7. **Sentiment Counts**:
+6. **Sentiment Counts**:
    ```py
    sentiment_counts = sentiment_result['sentiment'].value_counts()
    ```
    This line appears to count the occurrences of each sentiment (positive, neutral, negative) in the results and stores them in 'sentiment_counts'. Know more about the `value_counts` method [here](https://pandas.pydata.org/docs/reference/api/pandas.Series.value_counts.html).
 
-8. **Response Building**:
+7. **Response Building**:
    ```py
    response["sentiments"] = {
        "positive": int(sentiment_counts.get('positive', 0)),
@@ -87,7 +87,7 @@
    }
    ```
    This code constructs the API response by creating a dictionary within the 'response' dictionary. It includes the counts of positive, neutral, and negative sentiments as integers.
-9. **Response Return**:
+8. **Response Return**:
    ```py
    return jsonify(response)
    ```
@@ -97,7 +97,7 @@ Note: Now you can run the flask application using the following command:
 ```sh
 python app.py
 ```
-You can access the API endpoint at http://localhost:5000/api/youtube?youtube_video_id=raWFGQ20OfA
+You can access the API endpoint at [http://localhost:5000/api/youtube?youtube_video_id=raWFGQ20OfA](http://localhost:5000/api/youtube?youtube_video_id=raWFGQ20OfA)
 
 You will get the following response:
 ```json

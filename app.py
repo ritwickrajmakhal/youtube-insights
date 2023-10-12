@@ -64,6 +64,21 @@ def create_model(name, predict, prompt_template):
         # Get the model
         return project.models.get(name)
 
+# Create sentiment_classifier_model
+sentiment_classifier_model = create_model(name='sentiment_classifier_model', predict='sentiment',
+                                            prompt_template="describe the sentiment of the comment strictly as 'positive', 'neutral', or 'negative'.'I love the product':positive, 'It is a scam':negative '{{comment}}.':")
+
+# Summarize the comments or predict recommendations
+text_summarization_model = create_model(name='text_summarization_model', predict='summary',
+                                        prompt_template="provide an informative summary of the comments comments:{{comments}} using full sentences")
+
+# Predict recommendations
+recommendation_model = create_model(name='recommendation_model', predict='recommendation',
+                                    prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
+
+# Keyword Extraction
+keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
+                                        prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
 
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
@@ -72,10 +87,6 @@ def get_youtube_insights():
     max_comments_limit = request.args.get('limit', 10)
     # Create the JSON response with initial sentiment counts
     response = {}
-
-    # Create sentiment_classifier_model
-    sentiment_classifier_model = create_model(name='sentiment_classifier_model', predict='sentiment',
-                                              prompt_template="describe the sentiment of the comment strictly as 'positive', 'neutral', or 'negative'.'I love the product':positive, 'It is a scam':negative '{{comment}}.':")
 
     # Predict sentiments
     sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
@@ -90,9 +101,6 @@ def get_youtube_insights():
         "negative": int(sentiment_counts.get('negative', 0))
     }
 
-    # Summarize the comments or predict recommendations
-    text_summarization_model = create_model(name='text_summarization_model', predict='summary',
-                                            prompt_template="provide an informative summary of the comments comments:{{comments}} using full sentences")
     # gather all comment
     merged_comments = ''.join(sentiment_result['comment'].tolist())
     # Predict summarized comment
@@ -101,24 +109,17 @@ def get_youtube_insights():
     response["summary"] = str(summarizer_result['summary'][0])
 
     # Predict recommendations
-    recommendation_model = create_model(name='recommendation_model', predict='recommendation',
-                                        prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
-    # Predict recommendations
     recommendation_result = recommendation_model.predict(
         {'comments': merged_comments})
     response["recommendation"] = str(
         recommendation_result['recommendation'][0])
 
-    # Keyword Extraction
-    keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
-                                            prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
     # Predict keywords
     keyword_extraction_result = keyword_extraction_model.predict(
         {'comments': merged_comments})
     response["keywords"] = str(keyword_extraction_result['keywords'][0])
 
     return jsonify(response)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
