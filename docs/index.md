@@ -1,8 +1,8 @@
-# YouTube Insights with MindsDB and YouTube API - Tutorial
+# YouTube Insights with MindsDB SDK - Tutorial
 
 ## Introduction
 
-YouTube Insights is a Flask web application that uses MindsDB and the YouTube API to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
+YouTube Insights is a Flask web application that uses MindsDB SDK to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
 
 ## Table of Contents
 
@@ -10,8 +10,12 @@ YouTube Insights is a Flask web application that uses MindsDB and the YouTube AP
 - [Getting Started](#getting-started)
   - Step 1: [Create a virtual environment and activate it](#step-1-create-a-virtual-environment-and-activate-it)
   - Step 2: [Creating a basic Flask app](#step-2-creating-a-basic-flask-app)
-  - Step 3: [Install the MindsDB Python SDK](#step-3-install-the-mindsdb-python-sdk)
-  - Step 4: [Create a MindsDB project](#step-4-create-a-mindsdb-project)
+  - Step 3: [Install python-dotenv and load environment variables](#step-3-install-python-dotenv-and-load-environment-variables)
+  - Step 4: [Install the MindsDB Python SDK and import it](./page1.md/#step-4-install-the-mindsdb-python-sdk-and-import-it)
+  - Step 5: [Create a MindsDB project](./page1.md/#step-5-create-a-mindsdb-project)
+  - Step 6: [Add a MindsDB Data source](./page1.md/#step-6-add-a-mindsdb-data-source)
+  - Step 7: [Create a MindsDB model](./page2.md/#step-7-create-a-mindsdb-model)
+  - Step 8: [YouTube comment sentiment analysis](./page2.md/#step-8-youtube-comment-sentiment-analysis)
 
 ## Prerequisites
 
@@ -21,7 +25,7 @@ Before getting started, make sure you have the following prerequisites installed
 - [YouTube API Key](https://developers.google.com/youtube/registering_an_application)
 - [OpenAI API Key](https://openai.com/)
 - [MindsDB Cloud Account](https://mindsdb.com/)
-- [Visual Studio Code](https://code.visualstudio.com/) with `Thunder Client` extension installed
+- [Visual Studio Code](https://code.visualstudio.com/) or any other code editor
 - Internet connection
 
 ## Getting Started
@@ -57,8 +61,8 @@ Before getting started, make sure you have the following prerequisites installed
 
   ```ps
   youtube-insights
-                  ├── app.py
-                  └── venv
+                ├── app.py
+                └── venv
   ```
 
 - Add the following code to `app.py`:
@@ -90,15 +94,6 @@ Before getting started, make sure you have the following prerequisites installed
   pip install python-dotenv
   ```
 
-- Create a file called `.env` and add the following code to it:
-
-  ```ps
-  MINDSDB_EMAIL=your-mindsdb-email
-  MINDSDB_PASSWORD=your-mindsdb-password
-  YOUTUBE_API_KEY=your-youtube-api-key
-  OPENAI_API_KEY=your-openai-api-key
-  ```
-
 - Load your environment variables in `app.py`:
 
   ```py
@@ -106,6 +101,7 @@ Before getting started, make sure you have the following prerequisites installed
   from dotenv import load_dotenv
   import os
 
+  # Load the environment variables from the .env file
   load_dotenv()
 
   app = Flask(__name__)
@@ -136,80 +132,4 @@ Before getting started, make sure you have the following prerequisites installed
 
   Note: You can stop your Flask app by pressing `CTRL+C` in your terminal.
 
-### Step 4: Install the MindsDB Python SDK and import it
-
-- Now that you have a basic Flask app, you can install the MindsDB Python SDK. First, install the MindsDB Python SDK:
-
-  ```ps
-  pip install mindsdb_sdk
-  ```
-
-- Then import the MindsDB SDK in `app.py`:
-
-  ```py
-    ...
-    import mindsdb_sdk
-    ...
-  ```
-
-### Step 5: Create a MindsDB project
-
-- To create a mindsdb project in python we have first make a connection to the mindsdb server.
-
-  ```py
-      ...
-      # Check if the environment variables are set
-      if os.environ.get('MINDSDB_EMAIL') is None:
-          raise Exception('Please set the MINDSDB_EMAIL environment variable')
-      if os.environ.get('MINDSDB_PASSWORD') is None:
-          raise Exception(
-              'Please set the MINDSDB_PASSWORD environment variable')
-
-      # Connect to MindsDB Cloud server
-      try:
-          server = mindsdb_sdk.connect(login=os.environ.get(
-              'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
-      except:
-          raise Exception("Check your internet connection or mindsdb credentials")
-      ...
-  ```
-
-  In this code snippet we are checking if the environment variables are set and then we are connecting to the mindsdb server using the `connect` method. You can read more about the `connect` method [here](https://docs.mindsdb.com/using-mindsdb/connecting-to-mindsdb).
-
-- Now we are ready to create a mindsdb project. To create a mindsdb project we have to use the `create_project` method. You can read more about the `create_project` method [here](https://docs.mindsdb.com/using-mindsdb/creating-a-project).
-
-  ```py
-      ...
-      # Create project if not exists
-      try:
-          project = server.get_project('youtube_insights')
-      except:
-          project = server.create_project('youtube_insights')
-      ...
-  ```
-
-  In this code snippet we are checking if the project exists and if it doesn't exist we are creating a new project.
-
-### Step 6: Add a MindsDB Data source
-
-- Now that we have a mindsdb project, we can create a mindsdb data source. To create a mindsdb data source we have to use the `create_database` method. You can read more about the `create_database` method [here](https://docs.mindsdb.com/using-mindsdb/creating-a-data-source).
-
-  ```py
-    ...
-    # Add data sources if not exists
-    try:
-        # Check if the environment variables are set
-        if os.environ.get('YOUTUBE_API_KEY') is None:
-            raise Exception(
-                'Please set the YOUTUBE_API_KEY environment variable')
-        # Create the database if not exist
-        mindsdb_youtube = server.create_database(name='mindsdb_youtube', engine='youtube', connection_args={
-            'youtube_api_token': os.environ.get('YOUTUBE_API_KEY')})
-    except:
-        # Get the database if exist
-        mindsdb_youtube = server.get_database('mindsdb_youtube')
-    ...
-  ```
-    In this code snippet we are checking if the data source exists and if it doesn't exist we are creating a new data source.
-
-[Page 2](./page2.md)
+[Next>>](./page1.md)
