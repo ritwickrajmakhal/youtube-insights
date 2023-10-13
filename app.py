@@ -44,18 +44,24 @@ try:
 except:
     mindsdb_youtube = server.get_database('mindsdb_youtube')
 
+# Create ML Engine if not exists
+# try:
+#     server.ml_engines.create(name='hf_inference_api', handler='huggingface', connection_data={
+#                              'api_key': os.environ.get('HF_API_KEY')})
+# except:
+#     pass
 
-def create_model(name, predict, prompt_template):
+
+def create_model(name: str, engine: str, predict: str, options: dict):
     from time import sleep
     # check model is exist or not
     try:
         # Create the model
         model = project.models.create(
             name=name,
-            engine='openai',
+            engine=engine,
             predict=predict,
-            prompt_template=prompt_template,
-            api_key=os.environ.get('OPENAI_API_KEY')
+            options=options
         )
         while model.get_status() != 'complete':
             sleep(1)
@@ -64,21 +70,38 @@ def create_model(name, predict, prompt_template):
         # Get the model
         return project.models.get(name)
 
+
 # Create sentiment_classifier_model
-sentiment_classifier_model = create_model(name='sentiment_classifier_model', predict='sentiment',
-                                            prompt_template="describe the sentiment of the comment strictly as 'positive', 'neutral', or 'negative'.'I love the product':positive, 'It is a scam':negative '{{comment}}.':")
+sentiment_classifier_model = create_model(name='sentiment_classifier_model',
+                                          engine='huggingface',
+                                          predict='sentiment',
+                                          options={
+                                              'task': 'text-classification',
+                                              'model_name': 'cardiffnlp/twitter-roberta-base-sentiment',
+                                              'input_column': 'comment',
+                                              'labels': ['negative', 'neutral', 'positive']
+                                          })
 
 # Summarize the comments or predict recommendations
-text_summarization_model = create_model(name='text_summarization_model', predict='summary',
-                                        prompt_template="provide an informative summary of the comments comments:{{comments}} using full sentences")
+text_summarization_model = create_model(name='text_summarization_model',
+                                        engine='huggingface',
+                                        predict='comment_summary',
+                                        options={
+                                            'task': 'summarization',
+                                            'model_name': 'sshleifer/distilbart-cnn-12-6',
+                                            'input_column': "comment_long",
+                                            'min_output_length': 100,
+                                            'max_output_length': 1000
+                                        })
 
-# Predict recommendations
-recommendation_model = create_model(name='recommendation_model', predict='recommendation',
-                                    prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
+# # Predict recommendations
+# recommendation_model = create_model(name='recommendation_model', predict='recommendation',
+#                                     prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
 
-# Keyword Extraction
-keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
-                                        prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
+# # Keyword Extraction
+# keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
+#                                         prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
+
 
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
@@ -92,7 +115,8 @@ def get_youtube_insights():
     sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
                                     FROM mindsdb_youtube.get_comments AS input
                                     JOIN youtube_insights.sentiment_classifier_model AS output
-                                    WHERE input.youtube_video_id = \"{youtube_video_id}\" LIMIT {max_comments_limit}''').fetch()
+                                    WHERE input.youtube_video_id = \'{youtube_video_id}\'
+                                    LIMIT {max_comments_limit};''').fetch()
 
     sentiment_counts = sentiment_result['sentiment'].value_counts()
     response["sentiments"] = {
@@ -102,24 +126,33 @@ def get_youtube_insights():
     }
 
     # gather all comment
-    merged_comments = ''.join(sentiment_result['comment'].tolist())
-    # Predict summarized comment
-    summarizer_result = text_summarization_model.predict(
-        {'comments': merged_comments})
-    response["summary"] = str(summarizer_result['summary'][0])
+    merged_comments = ' '.join(sentiment_result['comment'].tolist())
 
-    # Predict recommendations
-    recommendation_result = recommendation_model.predict(
-        {'comments': merged_comments})
-    response["recommendation"] = str(
-        recommendation_result['recommendation'][0])
+    if request.args.get('comment_summary', 'false') == 'true':
 
-    # Predict keywords
-    keyword_extraction_result = keyword_extraction_model.predict(
-        {'comments': merged_comments})
-    response["keywords"] = str(keyword_extraction_result['keywords'][0])
+        # Predict summarized comment
+        summarizer_result = text_summarization_model.predict(
+            {'comment_long': merged_comments})
+        response["comment_summary"] = str(
+            summarizer_result['comment_summary'][0])
 
-    return jsonify(response)
+    # if request.args.get('recommendation', 'false') == 'true':
+
+    #     # Predict recommendations
+    #     recommendation_result = recommendation_model.predict(
+    #         {'comments': merged_comments})
+    #     response["recommendation"] = str(
+    #         recommendation_result['recommendation'][0])
+
+    # if request.args.get('keywords', 'false') == 'true':
+
+    #     # Predict keywords
+    #     keyword_extraction_result = keyword_extraction_model.predict(
+    #         {'comments': merged_comments})
+    #     response["keywords"] = str(keyword_extraction_result['keywords'][0])
+
+    return response
+
 
 if __name__ == '__main__':
     app.run(debug=True)
