@@ -1,4 +1,4 @@
-# YouTube Insights with MindsDB SDK - Tutorial
+# YouTube Insights using MindsDB SDK - Tutorial
 
 ## Introduction
 
