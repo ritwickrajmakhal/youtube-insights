@@ -24,14 +24,17 @@ if os.environ.get('MINDSDB_PASSWORD') is None:
 try:
     server = mindsdb_sdk.connect(login=os.environ.get(
         'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
+    print("Connected to MindsDB Cloud server")
 except:
     raise Exception("Check your internet connection or mindsdb credentials")
 
 # Create project if not exists
 try:
     project = server.get_project('youtube_insights')
+    print("Project already exists")
 except:
     project = server.create_project('youtube_insights')
+    print("Project created")
 
 # Add data sources if not exists
 try:
@@ -42,8 +45,10 @@ try:
     # Create the database
     mindsdb_youtube = server.create_database(name='mindsdb_youtube', engine='youtube', connection_args={
         'youtube_api_token': os.environ.get('YOUTUBE_API_KEY')})
+    print("Database created")
 except:
     mindsdb_youtube = server.get_database('mindsdb_youtube')
+    print("Database already exists")
 
 
 def create_model(name: str, engine: str, predict: str, options: dict):
@@ -57,12 +62,15 @@ def create_model(name: str, engine: str, predict: str, options: dict):
             predict=predict,
             options=options
         )
+        print(f"Model {name} created")
         # Wait for the model to be trained
         while model.get_status() != 'complete':
             sleep(1)
+            print("Training the model...")
         return model
     except:
         # Get the model
+        print("Model already exists")
         return project.models.get(name)
 
 
