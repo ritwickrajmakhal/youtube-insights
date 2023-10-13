@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 import mindsdb_sdk
 from flask_cors import CORS
+import threading
 
 # Create the Flask app
 app = Flask(__name__)
@@ -44,13 +45,6 @@ try:
 except:
     mindsdb_youtube = server.get_database('mindsdb_youtube')
 
-# Create ML Engine if not exists
-# try:
-#     server.ml_engines.create(name='hf_inference_api', handler='huggingface', connection_data={
-#                              'api_key': os.environ.get('HF_API_KEY')})
-# except:
-#     pass
-
 
 def create_model(name: str, engine: str, predict: str, options: dict):
     from time import sleep
@@ -63,6 +57,7 @@ def create_model(name: str, engine: str, predict: str, options: dict):
             predict=predict,
             options=options
         )
+        # Wait for the model to be trained
         while model.get_status() != 'complete':
             sleep(1)
         return model
@@ -82,34 +77,68 @@ sentiment_classifier_model = create_model(name='sentiment_classifier_model',
                                               'labels': ['negative', 'neutral', 'positive']
                                           })
 
-# Summarize the comments or predict recommendations
+# Create text summarization model
 text_summarization_model = create_model(name='text_summarization_model',
-                                        engine='huggingface',
+                                        engine='openai',
                                         predict='comment_summary',
                                         options={
-                                            'task': 'summarization',
-                                            'model_name': 'sshleifer/distilbart-cnn-12-6',
-                                            'input_column': "comment_long",
-                                            'min_output_length': 100,
-                                            'max_output_length': 1000
+                                            'prompt_template': "provide an informative summary of the comments comments:{{comments}} using full sentences",
+                                            'api_key': os.environ.get('OPENAI_API_KEY')
                                         })
 
-# # Predict recommendations
-# recommendation_model = create_model(name='recommendation_model', predict='recommendation',
-#                                     prompt_template="Please analyze the comments below and generate a compelling recommendation for the video. Comments:{{comments}}")
+# Create keyword recommendation model
+recommendation_model = create_model(name='recommendation_model',
+                                    engine='openai',
+                                    predict='recommendation',
+                                    options={
+                                            'prompt_template': "Based on the comments from YouTube videos, strictly tell me the topic names that a YouTuber can consider to grow their channel. Example: 'Python' if peoples are talking about python. comments:{{comments}}",
+                                            'api_key': os.environ.get('OPENAI_API_KEY')
+                                    })
 
-# # Keyword Extraction
-# keyword_extraction_model = create_model(name='keyword_extraction_model', predict='keywords',
-#                                         prompt_template="Please extract the keywords from the comments below. Comments:{{comments}}")
+# response dictionary
+response = {}
+
+
+def get_summarization(data):
+    """makes a summary of the comments
+
+    Args:
+        data (dict): comments
+        example: {'comments': 'comment1 comment2 comment3'}
+    """
+    # predict the summary
+    summarizer_result = text_summarization_model.predict(
+        data=data)
+    # store the summary in response dictionary
+    response["comment_summary"] = str(summarizer_result['comment_summary'][0])
+
+
+def get_recommendation(data):
+    """makes a summary of the comments
+
+    Args:
+        data (dict): comments
+        example: {'comments': 'comment1 comment2 comment3'}
+    """
+    # predict the recommendation
+    recommendation_result = recommendation_model.predict(
+        data=data)
+    # store the recommendation in response dictionary
+    response["recommendation"] = str(
+        recommendation_result['recommendation'][0])
 
 
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
 
+    # Get the youtube video id from the request string
     youtube_video_id = request.args.get('youtube_video_id')
+    # Get the max comments limit from the request string
     max_comments_limit = request.args.get('limit', 10)
-    # Create the JSON response with initial sentiment counts
-    response = {}
+    # Get the comment_summary switch from the request string
+    comment_summary = request.args.get('comment_summary', 'false')
+    # Get the recommendation switch from the request string
+    recommendation = request.args.get('recommendation', 'false')
 
     # Predict sentiments
     sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
@@ -117,7 +146,7 @@ def get_youtube_insights():
                                     JOIN youtube_insights.sentiment_classifier_model AS output
                                     WHERE input.youtube_video_id = \'{youtube_video_id}\'
                                     LIMIT {max_comments_limit};''').fetch()
-
+    # store the sentiments in response dictionary
     sentiment_counts = sentiment_result['sentiment'].value_counts()
     response["sentiments"] = {
         "positive": int(sentiment_counts.get('positive', 0)),
@@ -128,28 +157,23 @@ def get_youtube_insights():
     # gather all comment
     merged_comments = ' '.join(sentiment_result['comment'].tolist())
 
-    if request.args.get('comment_summary', 'false') == 'true':
+    if comment_summary == 'true':
 
-        # Predict summarized comment
-        summarizer_result = text_summarization_model.predict(
-            {'comment_long': merged_comments})
-        response["comment_summary"] = str(
-            summarizer_result['comment_summary'][0])
+        # Predict summary
+        t1 = threading.Thread(target=get_summarization, args=(
+            {'comments': merged_comments},))
+        t1.start()
 
-    # if request.args.get('recommendation', 'false') == 'true':
+    if recommendation == 'true':
 
-    #     # Predict recommendations
-    #     recommendation_result = recommendation_model.predict(
-    #         {'comments': merged_comments})
-    #     response["recommendation"] = str(
-    #         recommendation_result['recommendation'][0])
+        # Predict recommendations
+        t2 = threading.Thread(target=get_recommendation,
+                              args=({'comments': merged_comments},))
+        t2.start()
 
-    # if request.args.get('keywords', 'false') == 'true':
-
-    #     # Predict keywords
-    #     keyword_extraction_result = keyword_extraction_model.predict(
-    #         {'comments': merged_comments})
-    #     response["keywords"] = str(keyword_extraction_result['keywords'][0])
+    # wait for the threads to finish
+    t1.join() if comment_summary == 'true' else None
+    t2.join() if recommendation == 'true' else None
 
     return response
 
