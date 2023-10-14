@@ -4,6 +4,8 @@
 
 YouTube Insights is a Flask web application that uses MindsDB SDK to analyze sentiment and summarize comments for a given YouTube video. This project helps you gain insights into the sentiments expressed in comments on YouTube videos and provides a summarized overview of the comments.
 
+Note: We will make a simpler version of YouTube Insights project in this tutorial. The full project can be found [here](https://github.com/ritwickrajmakhal/youtube-insights).
+
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
@@ -13,17 +15,18 @@ YouTube Insights is a Flask web application that uses MindsDB SDK to analyze sen
   - Step 3: [Install python-dotenv and load environment variables](#step-3-install-python-dotenv-and-load-environment-variables)
   - Step 4: [Install the MindsDB Python SDK and import it](./page1.md/#step-4-install-the-mindsdb-python-sdk-and-import-it)
   - Step 5: [Create a MindsDB project](./page1.md/#step-5-create-a-mindsdb-project)
-  - Step 6: [Add a MindsDB Data source](./page1.md/#step-6-add-a-mindsdb-data-source)
+  - Step 6: [Add a MindsDB Data source (Importing YouTube's Comments)](./page1.md/#step-6-add-a-mindsdb-data-source)
   - Step 7: [Create a MindsDB model](./page2.md/#step-7-create-a-mindsdb-model)
   - Step 8: [YouTube comment sentiment analysis](./page2.md/#step-8-youtube-comment-sentiment-analysis)
-
+  - Step 9: [YouTube comment summarization](./page2.md/#step-9-youtube-comment-summarization)
+  - Step 10: [Making request to our Flask app](./page2.md/#step-10-making-request-to-our-flask-app)
+- Conclusion: [What's next?](./page2.md/#conclusion-whats-next)
 ## Prerequisites
 
 Before getting started, make sure you have the following prerequisites installed and set up:
 
 - [Python 3.x](https://www.python.org/downloads/)
 - [YouTube API Key](https://developers.google.com/youtube/registering_an_application)
-- [OpenAI API Key](https://openai.com/)
 - [MindsDB Cloud Account](https://mindsdb.com/)
 - [Visual Studio Code](https://code.visualstudio.com/) or any other code editor
 - Internet connection
@@ -32,9 +35,11 @@ Before getting started, make sure you have the following prerequisites installed
 
 ### Step 1: Create a virtual environment and activate it
 
-- First create a fresh folder for your project and navigate to it in your terminal. Then create a virtual environment and activate it:
+- First create a fresh folder called `youtube-insights` for your project and navigate to it in your terminal. Then create a virtual environment and activate it:
 
   ```ps
+  mkdir youtube-insights
+  cd youtube-insights
   python -m venv venv
   source venv/bin/activate  # On Windows, use venv\Scripts\activate
   ```
@@ -79,19 +84,19 @@ Before getting started, make sure you have the following prerequisites installed
 
 ### Step 3: Install python-dotenv and load environment variables
 
-- Now that you have a basic Flask app, you can install `python-dotenv` and load your environment variables. First, create a file called `.env` and add the following code to it:
-
-  ```ps
-  MINDSDB_EMAIL=your-mindsdb-email
-  MINDSDB_PASSWORD=your-mindsdb-password
-  YOUTUBE_API_KEY=your-youtube-api-key
-  OPENAI_API_KEY=your-openai-api-key
-  ```
-
 - Go to your terminal and install `python-dotenv`:
 
   ```ps
   pip install python-dotenv
+  ```
+
+- Now create a file called `.env` and add the following code to it:
+
+  ```
+  MINDSDB_EMAIL=your-mindsdb-email
+  MINDSDB_PASSWORD=your-mindsdb-password
+  YOUTUBE_API_KEY=your-youtube-api-key
+  OPENAI_API_KEY=your-openai-api-key
   ```
 
 - Load your environment variables in `app.py`:

@@ -70,7 +70,7 @@ def create_model(name: str, engine: str, predict: str, options: dict):
         return model
     except:
         # Get the model
-        print("Model already exists")
+        print(f"Model {name} already exists")
         return project.models.get(name)
 
 

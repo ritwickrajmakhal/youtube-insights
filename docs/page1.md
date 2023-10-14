@@ -10,11 +10,7 @@
 
   ```py
   ...
-  import os
   import mindsdb_sdk
-
-  # Load the environment variables from the .env file
-  load_dotenv()
   ...
   ```
 
@@ -36,9 +32,9 @@
   try:
       server = mindsdb_sdk.connect(login=os.environ.get(
           'MINDSDB_EMAIL'), password=os.environ.get('MINDSDB_PASSWORD'))
+      print("Connected to MindsDB Cloud server")
   except:
       raise Exception("Check your internet connection or mindsdb credentials")
-  app = Flask(__name__)
   ...
   ```
 
@@ -48,13 +44,13 @@
 
   ```py
   ...
-      raise Exception("Check your internet connection or mindsdb credentials")
   # Create project if not exists
   try:
       project = server.get_project('youtube_insights')
+      print("Project already exists")
   except:
       project = server.create_project('youtube_insights')
-  app = Flask(__name__)
+      print("Project created")
   ...
   ```
 
@@ -66,25 +62,23 @@
 
   ```py
   ...
-        project = server.create_project('youtube_insights')
   # Add data sources if not exists
   try:
       # Check if the environment variables are set
       if os.environ.get('YOUTUBE_API_KEY') is None:
           raise Exception(
               'Please set the YOUTUBE_API_KEY environment variable')
-      # Create the database if not exist
+      # Create the database
       mindsdb_youtube = server.create_database(name='mindsdb_youtube', engine='youtube', connection_args={
           'youtube_api_token': os.environ.get('YOUTUBE_API_KEY')})
+      print("Database created")
   except:
-      # Get the database if exist
       mindsdb_youtube = server.get_database('mindsdb_youtube')
-    app = Flask(__name__)
+      print("Database already exists")
   ...
   ```
-
-  In this code snippet we are checking if the data source exists and if it doesn't exist we are creating a new data source called `mindsdb_youtube`.
-
+  In this code snippet we are checking if the data source exists and if it doesn't exist we are creating a new data source called `mindsdb_youtube` using the `create_database` method. We are using the `youtube` engine to create the data source. We are using the `YOUTUBE_API_KEY` environment variable as the `youtube_api_token` connection argument.
+  
   Note : Now you can run the following program to create your mindsdb project, data source into the [MindsDB cloud server](https://cloud.mindsdb.com/).
 
   ![MindsDB Cloud Editor](./assets/img/mindsdb-cloud-editor.png)
