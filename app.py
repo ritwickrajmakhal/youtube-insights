@@ -31,10 +31,10 @@ except:
 # Create project if not exists
 try:
     project = server.get_project('youtube_insights')
-    print("Project already exists")
+    print("Project youtube_insights already exists")
 except:
     project = server.create_project('youtube_insights')
-    print("Project created")
+    print("Project youtube_insights created")
 
 # Add data sources if not exists
 try:
@@ -45,11 +45,10 @@ try:
     # Create the database
     mindsdb_youtube = server.create_database(name='mindsdb_youtube', engine='youtube', connection_args={
         'youtube_api_token': os.environ.get('YOUTUBE_API_KEY')})
-    print("Database created")
+    print("Database mindsdb_youtube created")
 except:
     mindsdb_youtube = server.get_database('mindsdb_youtube')
-    print("Database already exists")
-
+    print("Database mindsdb_youtube already exists")
 
 def create_model(name: str, engine: str, predict: str, options: dict):
     from time import sleep
@@ -73,7 +72,6 @@ def create_model(name: str, engine: str, predict: str, options: dict):
         print(f"Model {name} already exists")
         return project.models.get(name)
 
-
 # Create sentiment_classifier_model
 sentiment_classifier_model = create_model(name='sentiment_classifier_model',
                                           engine='huggingface',
@@ -84,6 +82,17 @@ sentiment_classifier_model = create_model(name='sentiment_classifier_model',
                                               'input_column': 'comment',
                                               'labels': ['negative', 'neutral', 'positive']
                                           })
+
+# Create spam classifier model
+spam_classifier_model = create_model(name='spam_classifier_model',
+                                     engine='huggingface',
+                                     predict='spam',
+                                     options={
+                                            'task': 'text-classification',
+                                            'model_name': 'mrm8488/bert-tiny-finetuned-sms-spam-detection',
+                                            'input_column': 'comment',
+                                            'labels': ['false', 'true']
+                                     })
 
 # Create text summarization model
 text_summarization_model = create_model(name='text_summarization_model',
@@ -106,6 +115,37 @@ recommendation_model = create_model(name='recommendation_model',
 # response dictionary
 response = {}
 
+def get_sentiments(data):
+    """
+    Extracts the sentiments from the comments
+    
+    Args:
+        data (Table): comments
+        example: Table with columns ['display_name', 'username', 'comment']
+    """
+    # Predict sentiments
+    sentiment_result = sentiment_classifier_model.predict(data)
+    # store the sentiments in response dictionary
+    sentiment_counts = sentiment_result['sentiment'].value_counts()
+    response["sentiments"] = {
+        "positive": int(sentiment_counts.get('positive', 0)),
+        "neutral": int(sentiment_counts.get('neutral', 0)),
+        "negative": int(sentiment_counts.get('negative', 0))
+    }
+
+def get_spams(data):
+    """
+    detects the spams in the comments
+    
+    Args:
+        data (Table): comments
+        example: Table with columns ['display_name', 'username', 'comment']
+    """
+    # Predict spams
+    spam_result = spam_classifier_model.predict(data)
+    # store the spams in response dictionary
+    spam_counts = spam_result['spam'].value_counts()
+    response["spams"] = int(spam_counts.get('true', 0))
 
 def get_summarization(data):
     """makes a summary of the comments
@@ -119,7 +159,6 @@ def get_summarization(data):
         data=data)
     # store the summary in response dictionary
     response["comment_summary"] = str(summarizer_result['comment_summary'][0])
-
 
 def get_recommendation(data):
     """makes a summary of the comments
@@ -135,56 +174,57 @@ def get_recommendation(data):
     response["recommendation"] = str(
         recommendation_result['recommendation'][0])
 
-
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
 
-    # Get the youtube video id from the request string
+    
     youtube_video_id = request.args.get('youtube_video_id')
-    # Get the max comments limit from the request string
-    max_comments_limit = request.args.get('limit', 10)
-    # Get the comment_summary switch from the request string
+    max_comments_limit = int(request.args.get('limit', 10))
+    sentiment = request.args.get('sentiment', 'false')
+    spam = request.args.get('spam', 'false')
     comment_summary = request.args.get('comment_summary', 'false')
-    # Get the recommendation switch from the request string
     recommendation = request.args.get('recommendation', 'false')
 
-    # Predict sentiments
-    sentiment_result = server.query(f'''SELECT input.comment, output.sentiment
-                                    FROM mindsdb_youtube.get_comments AS input
-                                    JOIN youtube_insights.sentiment_classifier_model AS output
-                                    WHERE input.youtube_video_id = \'{youtube_video_id}\'
-                                    LIMIT {max_comments_limit};''').fetch()
-    # store the sentiments in response dictionary
-    sentiment_counts = sentiment_result['sentiment'].value_counts()
-    response["sentiments"] = {
-        "positive": int(sentiment_counts.get('positive', 0)),
-        "neutral": int(sentiment_counts.get('neutral', 0)),
-        "negative": int(sentiment_counts.get('negative', 0))
-    }
-
-    # gather all comment
-    merged_comments = ' '.join(sentiment_result['comment'].tolist())
-
-    if comment_summary == 'true':
-
-        # Predict summary
-        t1 = threading.Thread(target=get_summarization, args=(
-            {'comments': merged_comments},))
+    # Get the comments table from the database
+    comments = mindsdb_youtube.get_table('get_comments').filter(
+        youtube_video_id=youtube_video_id).limit(max_comments_limit)
+    # threads list
+    threads = []
+    
+    # predict sentiments
+    if sentiment == 'true':
+        t1 = threading.Thread(target=get_sentiments, args=(comments,))
+        threads.append(t1)
         t1.start()
 
-    if recommendation == 'true':
-
-        # Predict recommendations
-        t2 = threading.Thread(target=get_recommendation,
-                              args=({'comments': merged_comments},))
+    # predict spams
+    if spam == 'true':
+        t2 = threading.Thread(target=get_spams, args=(comments,))
+        threads.append(t2)
         t2.start()
 
+    # merge all the comments
+    merged_comments = ' '.join(comments.fetch().get('comment').tolist())
+
+    # predict comment summary
+    if comment_summary == 'true':
+        t3 = threading.Thread(target=get_summarization, args=(
+            {'comments': merged_comments},))
+        threads.append(t3)
+        t3.start()
+
+    # predict recommendation
+    if recommendation == 'true':
+        t4 = threading.Thread(target=get_recommendation,
+                              args=({'comments': merged_comments},))
+        threads.append(t4)
+        t4.start()
+
     # wait for the threads to finish
-    t1.join() if comment_summary == 'true' else None
-    t2.join() if recommendation == 'true' else None
+    for thread in threads:
+        thread.join()
 
     return response
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
