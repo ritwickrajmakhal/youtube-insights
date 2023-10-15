@@ -83,4 +83,6 @@
 
   ![MindsDB Cloud Editor](./assets/img/mindsdb-cloud-editor.png)
 
+# Congratulations!🎊 You have successfully created a MindsDB project and data source using the MindsDB Python SDK.
+
 [<<Previous](./index.md) [Next>>](./page2.md)

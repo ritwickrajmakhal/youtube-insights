@@ -19,8 +19,8 @@ Note: We will make a simpler version of YouTube Insights project in this tutoria
   - Step 7: [Create a MindsDB model](./page2.md/#step-7-create-a-mindsdb-model)
   - Step 8: [YouTube comment sentiment analysis](./page2.md/#step-8-youtube-comment-sentiment-analysis)
   - Step 9: [YouTube comment summarization](./page2.md/#step-9-youtube-comment-summarization)
-  - Step 10: [Making request to our Flask app](./page2.md/#step-10-making-request-to-our-flask-app)
-- Conclusion: [What's next?](./page2.md/#conclusion-whats-next)
+  - Step 10: [Making request to our Flask app](./page3.md/#step-10-making-request-to-our-flask-app)
+- Conclusion: [What's next?](./page3.md/#conclusion-whats-next)
 ## Prerequisites
 
 Before getting started, make sure you have the following prerequisites installed and set up:
@@ -102,7 +102,7 @@ Before getting started, make sure you have the following prerequisites installed
 - Load your environment variables in `app.py`:
 
   ```py
-  from flask import Flask
+  from flask import Flask, jsonify, request
   from dotenv import load_dotenv
   import os
 

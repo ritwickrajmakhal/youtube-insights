@@ -1,17 +1,17 @@
 ## Step 9: YouTube comment summarization
 
-Within the same method of the previous step
+We are continuing the definition of the `get_youtube_insights` function from the previous step.
 
-8. **Summarize Comments**:
+1. **Summarize Comments**:
 
-   ```py
-   # gather all comment
-   merged_comments = ' '.join(sentiment_result['comment'].tolist())
-   # summarize comments
-   summarizer_result = text_summarization_model.predict(data={'comments': merged_comments})
-   # store the summary in response dictionary
-   response["comment_summary"] = str(summarizer_result['comment_summary'][0])
-   ```
+  ```py
+  # gather all comment
+  merged_comments = ' '.join(sentiment_result['comment'].tolist())
+  # predict summarized comments
+  summarizer_result = text_summarization_model.predict(data={'comments': merged_comments})
+  # store the summary in response dictionary
+  response["comment_summary"] = str(summarizer_result['comment_summary'][0])
+  ```
 
    In this code we are using the `predict` method to predict the `comment_summary` column of the `text_summarization_model` model. We are using the `merged_comments` variable as the input data. We are using the `comment_summary` column as the target column. After getting the result we are storing the result in the `comment_summary` key of the `response` dictionary.
 
@@ -26,18 +26,18 @@ Note: Now you can run the flask application using the following command:
 ```sh
 python app.py
 ```
-
-You can access the API endpoint at [http://localhost:5000/api/youtube?youtube_video_id=KIvfM4g4aG4&limit=15](http://localhost:5000/api/youtube?youtube_video_id=KIvfM4g4aG4&limit=15)
+## Step 10: Making request to our Flask app 
+After successfully running the previous command you can access the API endpoint at [http://localhost:5000/api/youtube?youtube_video_id=KIvfM4g4aG4&limit=15](http://localhost:5000/api/youtube?youtube_video_id=KIvfM4g4aG4&limit=15)
 
 You will get the following response:
 
 ```json
 {
-  "comment_summary": "The comments on the video are quite varied. Some viewers express their admiration for Dhruv Rathee's content and find the video to be the best on his channel. Others mention the incredible story and the determination of the individuals involved. There are also comments about the video being realistic and scary, as well as requests for more videos on different topics such as train accidents and flight mysteries. Some viewers mention that they have heard about this incident in Bear Grylls' show \"Man vs Wild\" and",
+  "comment_summary": "The comments in the conversation cover a range of topics. One user asks about other mystery videos they would like to see, while another user shares a link to join a website with a discount offer. Another user requests a video about a train accident in Bihar Buxer district, expressing their sadness. There is also a comment expressing support for Palestine. The conversation then shifts to discussing a story about survivors resorting to cannibalism, with one trekker choosing to trek instead of eating his family members.",
   "sentiments": {
-    "negative": 3,
-    "neutral": 26,
-    "positive": 21
+    "negative": 1,
+    "neutral": 11,
+    "positive": 3
   }
 }
 ```
@@ -52,4 +52,4 @@ In this tutorial we have learned how to create a MindsDB project, data source an
 Example:
 ![youtube-insights-front-end](./assets/img/youtube-insights-front-end.png)
 
-[<<Previous](./page1.md)
+[<<Previous](./page2.md)
