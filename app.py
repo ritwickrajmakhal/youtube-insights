@@ -176,35 +176,38 @@ def get_recommendation(data):
 
 @app.route('/api/youtube', methods=['GET'])
 def get_youtube_insights():
-
-    
+    # Get args from request url
     youtube_video_id = request.args.get('youtube_video_id')
     max_comments_limit = int(request.args.get('limit', 10))
     sentiment = request.args.get('sentiment', 'false')
     spam = request.args.get('spam', 'false')
     comment_summary = request.args.get('comment_summary', 'false')
     recommendation = request.args.get('recommendation', 'false')
-
+    
     # Get the comments table from the database
-    comments = mindsdb_youtube.get_table('get_comments').filter(
+    comments_table = mindsdb_youtube.get_table('get_comments').filter(
         youtube_video_id=youtube_video_id).limit(max_comments_limit)
+    
+    if comment_summary == 'true' or recommendation == 'true':
+        comments = comments_table.fetch()
+        merged_comments = ' '.join(comments['comment'].tolist())
+    
     # threads list
     threads = []
-    
+    # Reset response dictionary
+    global response
+    response = {}
     # predict sentiments
     if sentiment == 'true':
-        t1 = threading.Thread(target=get_sentiments, args=(comments,))
+        t1 = threading.Thread(target=get_sentiments, args=(comments_table,))
         threads.append(t1)
         t1.start()
 
     # predict spams
     if spam == 'true':
-        t2 = threading.Thread(target=get_spams, args=(comments,))
+        t2 = threading.Thread(target=get_spams, args=(comments_table,))
         threads.append(t2)
         t2.start()
-
-    # merge all the comments
-    merged_comments = ' '.join(comments.fetch().get('comment').tolist())
 
     # predict comment summary
     if comment_summary == 'true':
@@ -224,7 +227,7 @@ def get_youtube_insights():
     for thread in threads:
         thread.join()
 
-    return response
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run()
